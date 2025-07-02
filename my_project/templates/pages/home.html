@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+{% load static %}
+
+<h2 class="mb-4">News Feed</h2>
+
+
+{% for photo in photos %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-header d-flex align-items-center">
+        <img src="https://i.pravatar.cc/50?u={{ photo.album.name }}" class="rounded-circle me-2" width="40" height="40">
+        <div>
+            <strong>{{ photo.album.name }}</strong><br>
+            <small class="text-muted">{{ photo.uploaded_at|date:"M d, Y h:i A" }}</small>
+        </div>
+    </div>
+    <div class="card-body">
+        <p>Photo from album: <strong>{{ photo.album.name }}</strong></p>
+        <img class="post-img" src="{{ photo.image.url }}" class="img-fluid rounded">
+    </div>
+    <div class="card-footer d-flex justify-content-between text-center">
+        <button class="btn btn-light w-100 me-1">👍 Like</button>
+        <button class="btn btn-light w-100 me-1">💬 Comment</button>
+        <button class="btn btn-light w-100">🔁 Share</button>
+    </div>
+</div>
+{% empty %}
+<p>No photos found.</p>
+{% endfor %}
+
+
+<!-- Dummy Posts -->
+{% for post in posts %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-header d-flex align-items-center">
+        <img src="{{ post.avatar }}" class="rounded-circle me-2" width="40" height="40">
+        <div>
+            <strong>{{ post.user }}</strong><br>
+            <small class="text-muted">{{ post.time }}</small>
+        </div>
+    </div>
+    <div class="card-body">
+        <p>{{ post.content }}</p>
+        {% if post.image %}
+        <img class="post-img" src="{{ post.image }}" class="img-fluid rounded">
+        {% endif %}
+    </div>
+    <div class="card-footer d-flex justify-content-between text-center">
+        <button class="btn btn-light w-100 me-1">👍 Like</button>
+        <button class="btn btn-light w-100 me-1">💬 Comment</button>
+        <button class="btn btn-light w-100">🔁 Share</button>
+    </div>
+</div>
+{% endfor %}
+
+
+
+
+
+
+
+{% endblock %}

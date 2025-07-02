@@ -1,0 +1,25 @@
+    .nav.navbar.navbar-default {
+        position: fixed;
+        z-index: 1045;
+        /* top: 0; */
+        left: 0;
+        right: 0;
+        width: 100%;
+        background: var(--header-background);
+        padding: 8px 0;
+
+    }
+
+.post-img{
+        width: 100% !important;
+        aspect-ratio: 3 / 2;
+}
+.album_img_card{
+        width: 175px;
+        height: 227px;
+        margin-left: -4px;
+}
+.album_img_card img{
+        /* width: 160px; */
+        height: 160px;
+}

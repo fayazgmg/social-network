@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load static %}
+
+
+<h2>Albums</h2>
+<!-- <a href="{% url 'album_create' %}" class="btn btn-primary mb-3">➕ Create Album</a> -->
+<a href="{% url 'upload_photo' %}" class="btn btn-primary mb-3">➕ Upload Photo</a>
+
+{% for album in albums %}
+  <div class="card mb-5">
+    <div class="card-header bg-primary text-white">
+      <h4>{{ album.name }}</h4>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        {% for photo in album.photos.all %}
+        <div class="col-md-4 mb-4">
+          <div class="card album_img_card">
+            <img src="{{ photo.image.url }}" class="card-img-top" alt="Image">
+            <div class="card-body">
+              <p class="card-text"><strong>Uploaded:</strong> {{ photo.uploaded_at|date:"M d, Y h:i A" }}</p>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+          <p class="text-muted">No photos in this album.</p>
+        {% endfor %}
+      </div>
+      <div class="mt-2">
+        <a href="{% url 'album_update' album.pk %}" class="btn btn-sm btn-warning">Edit</a>
+        <a href="{% url 'album_delete' album.pk %}" class="btn btn-sm btn-danger">Delete</a>
+      </div>
+    </div>
+  </div>
+{% empty %}
+  <p>No albums found.</p>
+{% endfor %}
+
+{% endblock %}
