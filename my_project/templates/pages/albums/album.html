@@ -8,33 +8,97 @@
 <a href="{% url 'upload_photo' %}" class="btn btn-primary mb-3">➕ Upload Photo</a>
 
 {% for album in albums %}
-  <div class="card mb-5">
-    <div class="card-header bg-primary text-white">
-      <h4>{{ album.name }}</h4>
-    </div>
-    <div class="card-body">
-      <div class="row">
-        {% for photo in album.photos.all %}
-        <div class="col-md-4 mb-4">
-          <div class="card album_img_card">
-            <img src="{{ photo.image.url }}" class="card-img-top" alt="Image">
-            <div class="card-body">
-              <p class="card-text"><strong>Uploaded:</strong> {{ photo.uploaded_at|date:"M d, Y h:i A" }}</p>
-            </div>
+<div class="card mb-5">
+  <div class="card-header bg-primary text-white">
+    <h4>{{ album.name }}</h4>
+  </div>
+  <div class="dropdown position-absolute top-0 end-0 m-2">
+    <button class="btn btn-sm fw-bold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      ⋮
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li>
+        <a class="dropdown-item" href="{% url 'album_update' album.pk %}">✏️ Edit</a>
+      </li>
+      <li>
+
+        <a href="{% url 'album_delete' album.pk %}" class="btn ">🗑️ Delete</a>
+
+      </li>
+    </ul>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      {% for photo in album.photos.all %}
+      <div class="col-md-4 mb-4">
+        <div class="card album_img_card">
+          <img src="{{ photo.image.url }}" class="card-img-top" alt="Image">
+          <div class="dropdown position-absolute top-0 end-0 m-2">
+            <button class="btn btn-sm fw-bold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              ⋮
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li>
+                <a class="dropdown-item" href="{% url 'photo_update' photo.id %}">✏️ Edit</a>
+              </li>
+              <li>
+                <form method="post" action="{% url 'photo_delete' photo.id %}" class="delete-photo-form">
+                  {% csrf_token %}
+                  <button type="button" class="dropdown-item text-danger btn-delete-photo">🗑️ Delete</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+
+
+          <div class="card-body">
+            <p class="card-text"><strong>Uploaded:</strong> {{ photo.uploaded_at|date:"M d, Y h:i A" }}</p>
+
           </div>
         </div>
-        {% empty %}
-          <p class="text-muted">No photos in this album.</p>
-        {% endfor %}
       </div>
-      <div class="mt-2">
-        <a href="{% url 'album_update' album.pk %}" class="btn btn-sm btn-warning">Edit</a>
-        <a href="{% url 'album_delete' album.pk %}" class="btn btn-sm btn-danger">Delete</a>
-      </div>
+      {% empty %}
+      <p class="text-muted">No photos in this album.</p>
+      {% endfor %}
     </div>
+    <!-- <div class="mt-2">
+      <a href="{% url 'album_update' album.pk %}" class="btn btn-sm btn-warning">Edit</a>
+      <a href="{% url 'album_delete' album.pk %}" class="btn btn-sm btn-danger">Delete</a>
+    </div> -->
   </div>
+</div>
 {% empty %}
-  <p>No albums found.</p>
+<p>No albums found.</p>
 {% endfor %}
 
+
+
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const deleteButtons = document.querySelectorAll(".btn-delete-photo");
+
+    deleteButtons.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const form = btn.closest("form");
+
+        Swal.fire({
+          title: 'Are you sure?',
+          text: "This photo will be permanently deleted!",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            form.submit();
+          }
+        });
+      });
+    });
+  });
+</script>
 {% endblock %}

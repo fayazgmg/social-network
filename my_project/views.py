@@ -7,12 +7,62 @@ from .forms import PhotoForm
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from .models import Album, Notification
+from .models import Notification
+from django.contrib.auth.models import User
+
+from django.contrib.auth.decorators import login_required
+
 
 
 # def home(request):
 #     return render(request, 'pages/home.html')
 
 
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None:
+            login(request, user)
+            # messages.success(request, f'Welcome back, {user.username}!')
+            return redirect('home')  
+        else:
+            messages.error(request, 'Invalid username or password.')
+
+    return render(request, 'pages/auth/login.html')
+
+
+def register_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        password2 = request.POST.get('password2')
+
+        if password != password2:
+            error = "Passwords do not match!"
+            return render(request, 'pages/auth/register.html', {'error': error})
+
+        if User.objects.filter(username=username).exists():
+            error = "Username already taken!"
+            return render(request, 'pages/auth/register.html', {'error': error})
+
+        user = User.objects.create_user(username=username, password=password)
+        login(request, user)
+        return redirect('home')
+
+    return render(request, 'pages/auth/register.html')
+
+
+
+
+# @login_required(login_url='/login/')
+# def home(request):
+#     # Ye page sirf login user ke liye accessible hai
+#     return render(request, 'home.html')
 
 def home(request):
     posts = [
@@ -61,9 +111,14 @@ def home(request):
     ]
     photos = Photo.objects.all().order_by('-uploaded_at')
 
+    notifications = []
+    if request.user.is_authenticated:
+        notifications = Notification.objects.filter(user=request.user).order_by('-created_at')[:5]
+
     return render(request, 'pages/home.html', {
         'posts': posts,
-        'photos': photos
+        'photos': photos,
+        'notifications': notifications, 
     })
     # return render(request, 'pages/home.html', {'posts': posts})
 
@@ -98,39 +153,74 @@ def album_list(request):
     albums = Album.objects.all().order_by('-created_at')
     for album in albums:
         album.paginated_photos = Paginator(album.photos.all(), 6).get_page(request.GET.get(f'page_{album.id}', 1))
-    return render(request, 'pages/albums/album.html', {'albums': albums})
+    
+    notifications = []
+    if request.user.is_authenticated:
+        notifications = Notification.objects.filter(user=request.user).order_by('-created_at')[:5]
+
+    return render(request, 'pages/albums/album.html', {'albums': albums,  'notifications': notifications,})
+
 
 
 def album_create(request):
     if request.method == 'POST':
         form = AlbumForm(request.POST)
         if form.is_valid():
-            form.save()
+            album = form.save()
+            
+            if request.user.is_authenticated:
+                Notification.objects.create(
+                    user=request.user,
+                    message=f"You created a new album: {album.name}"
+                )
+
             return redirect('album_list')
     else:
         form = AlbumForm()
+
     return render(request, 'pages/albums/album_form.html', {'form': form, 'title': 'Create Album'})
 
 
 
 def album_update(request, pk):
     album = get_object_or_404(Album, pk=pk)
+    old_name = album.name
+
     if request.method == 'POST':
         form = AlbumForm(request.POST, instance=album)
         if form.is_valid():
-            form.save()
+            updated_album = form.save()
+            new_name = updated_album.name
+
+            if request.user.is_authenticated and old_name != new_name:
+                Notification.objects.create(
+                    user=request.user,
+                    message=f"Album name changed from '{old_name}' to '{new_name}'"
+                )
+
             return redirect('album_list')
     else:
         form = AlbumForm(instance=album)
-    return render(request, 'pages/albums/album_form.html', {'form': form, 'title': 'Update Album'})
 
+    return render(request, 'pages/albums/album_form.html', {
+        'form': form,
+        'title': 'Update Album'
+    })
 
 
 def album_delete(request, pk):
     album = get_object_or_404(Album, pk=pk)
+    album_name = album.name 
+
     if request.method == 'POST':
         album.delete()
+        if request.user.is_authenticated:
+            Notification.objects.create(
+                user=request.user,
+                message=f"Album '{album_name}' deleted successfully"
+            )
         return redirect('album_list')
+
     return render(request, 'pages/albums/album_confirm_delete.html', {'album': album})
 
 
@@ -144,9 +234,16 @@ def upload_photo(request):
 
             album, created = Album.objects.get_or_create(name=album_name)
 
-            Photo.objects.create(album=album, image=image)
+            photo = Photo.objects.create(album=album, image=image)
 
-            return redirect('album_list')  # ya album list page
+     
+            if request.user.is_authenticated:
+                Notification.objects.create(
+                    user=request.user,
+                    message=f"You uploaded a new photo to album: {album.name}"
+                )
+
+            return redirect('album_list')
     else:
         form = PhotoForm()
 
@@ -166,32 +263,45 @@ def photo_edit(request, pk):
         form = PhotoForm(initial={'album_name': photo.album.name})
     return render(request, 'pages/edit_photo.html', {'form': form, 'photo': photo})
 
-def photo_delete(request, pk):
-    photo = get_object_or_404(Photo, pk=pk)
-    album_id = photo.album.id
-    photo.delete()
-    return redirect('album_detail', album_id=album_id)
 
 
 
-# ✅ Login View
-def login_view(request):
+
+def photo_update(request, photo_id):
+
+    photo = get_object_or_404(Photo, id=photo_id)
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
+        form = PhotoForm(request.POST, request.FILES, instance=photo)
+        if form.is_valid():
+            form.save()
+            return redirect('album_list')
+    else:
+        form = PhotoForm(instance=photo)
+    return render(request, 'pages/albums/photo_form.html', {'form': form, 'photo': photo})
 
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            messages.success(request, 'Logged in successfully!')
-            return redirect('home')
-        else:
-            messages.error(request, 'Invalid username or password.')
+def photo_delete(request, photo_id):
+    photo = get_object_or_404(Photo, id=photo_id)
+    album_name = photo.album.name  
 
-    return render(request, 'pages/auth/login.html')
+    if request.method == 'POST':
+        photo.delete()
 
-# ✅ Logout View
+        if request.user.is_authenticated:
+            Notification.objects.create(
+                user=request.user,
+                message=f"Photo from album '{album_name}' deleted successfully"
+            )
+
+        return redirect('album_list')
+
+    return render(request, 'pages/albums/photo_confirm_delete.html', {'photo': photo})
+
+
+
+
+
 def logout_view(request):
     logout(request)
-    messages.info(request, 'You have been logged out.')
-    return redirect('login')
+    # messages.info(request, 'You have been logged out.')  
+    # return redirect('login')
+    return render(request, 'pages/auth/login.html')

@@ -6,7 +6,8 @@
     <title>{% block title %}MySocial{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap 5 -->
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     {% load static %}
     <link rel="stylesheet" href="{% static 'style.css' %}">
     <style>
@@ -43,7 +44,6 @@
 <body>
 
 
-    <!-- ✅ Navbar Start -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'home' %}">📘 MySocial</a>
@@ -74,34 +74,48 @@
                     </li>
 
 
-                   
+
 
                 </ul>
- 
+
                 <ul>
-                 
+
                 </ul>
-                <!-- Right side (Login/Profile/etc.) -->
                 <ul class="navbar-nav">
-                       <li class="nav-item dropdown ">
-                        <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             🔔
+                            {% if notifications|length > 0 %}
                             <span
                                 class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                3
+                                {{ notifications|length }}
                             </span>
+                            {% endif %}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2" style="width: 300px;">
-                            <li><a class="dropdown-item small" href="#">📸 New photo added in Nature album</a></li>
-                            <li><a class="dropdown-item small" href="#">💬 New comment on your post</a></li>
-                            <li><a class="dropdown-item small" href="#">👍 Someone liked your album</a></li>
+
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm p-2"
+                            style="width: 320px; max-height: 400px; overflow-y: auto;">
+                            <li class="dropdown-header fw-bold text-primary">Notifications</li>
+                            <hr class="dropdown-divider m-1">
+
+                            {% for notify in notifications %}
                             <li>
-                                <hr class="dropdown-divider">
+                                <a class="dropdown-item small d-flex flex-column" href="#">
+                                    <span class="text-wrap" style="white-space: normal; word-break: break-word;">
+                                        {{ notify.message }}
+                                    </span>
+                                    <span class="text-muted small">{{ notify.created_at|date:"M d, Y H:i" }}</span>
+                                </a>
+                                <hr>
                             </li>
-                            <li><a class="dropdown-item text-center text-primary" href="#">View all notifications</a>
-                            </li>
+                            {% empty %}
+                            <li class="dropdown-item text-muted">No notifications</li>
+                            {% endfor %}
                         </ul>
                     </li>
+
+
                     {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="#">👤 {{ user.username }}</a>
@@ -138,21 +152,39 @@
                 {% endblock %}
             </div>
 
+
+
+
+
             <!-- Right Sidebar -->
             <div class="col-md-3 rightbar mt-4">
                 {% block rightbar %}
-                <h5>Suggested</h5>
-                <ul class="list-group">
-                    <li class="list-group-item">Friend 1</li>
-                    <li class="list-group-item">Friend 2</li>
-                    <li class="list-group-item">Friend 3</li>
-                </ul>
 
-                <hr>
-                <h5>Notifications</h5>
-                <p>No new notifications</p>
+
+
+                <!-- 🔔 Notifications Section -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        🔔 Notifications
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% if notifications %}
+                        {% for notify in notifications %}
+                        <li class="list-group-item small">
+                            {{ notify.message }}
+                            <br>
+                            <small class="text-muted">{{ notify.created_at|date:"M d, H:i" }}</small>
+                        </li>
+                        {% endfor %}
+                        {% else %}
+                        <li class="list-group-item text-muted">No notifications</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
                 {% endblock %}
             </div>
+
         </div>
     </div>
 </body>
