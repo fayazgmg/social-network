@@ -1,5 +1,64 @@
 {% extends 'base.html' %}
 {% block title %}Friends{% endblock %}
 {% block content %}
-<h2>Friends list goes here</h2>
+
+<h2 class="mb-4">All Users</h2>
+{% for user in all_users %}
+    <div class="card mb-3 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <img src="https://i.pravatar.cc/50?u={{ user.username }}" class="rounded-circle me-3" width="50" height="50" alt="Profile">
+            <strong>{{ user.username }}</strong>
+        </div>
+        <div>
+            {% if user.id in sent_user_ids %}
+                <span class="text-muted">✅ Request Sent</span>
+            {% else %}
+                <form method="post" action="{% url 'send_request' user.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-primary">Add Friend</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+{% empty %}
+    <p>No users found.</p>
+{% endfor %}
+
+<hr>
+
+<h3 class="mb-3">Received Friend Requests</h3>
+{% for r in received_requests %}
+    <div class="card mb-3 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <img src="https://i.pravatar.cc/50?u={{ r.from_user.username }}" class="rounded-circle me-3" width="50" height="50" alt="Profile">
+            <strong>{{ r.from_user.username }}</strong>
+        </div>
+        <div>
+            <form method="post" action="{% url 'accept_request' r.id %}" class="d-inline">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-success">Accept</button>
+            </form>
+        </div>
+    </div>
+{% empty %}
+    <p>No new friend requests</p>
+{% endfor %}
+
+<hr>
+
+<h3 class="mb-4">Your Friends</h3>
+{% for friend in friends %}
+    <div class="card mb-3 shadow-sm p-3 d-flex flex-row align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <img src="https://i.pravatar.cc/50?u={{ friend.username }}" class="rounded-circle me-3" width="50" height="50" alt="Profile">
+            <strong>{{ friend.username }}</strong>
+        </div>
+        <div>
+            <span class="text-success">Friends</span>
+        </div>
+    </div>
+{% empty %}
+    <p>You have no friends yet.</p>
+{% endfor %}
+
 {% endblock %}

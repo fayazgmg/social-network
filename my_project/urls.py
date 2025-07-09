@@ -1,13 +1,15 @@
 from django.urls import path
 from . import views
 from .views import photo_delete, photo_update
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('profile/', views.profile, name='profile'),
     path('friends/', views.friends, name='friends'),
-    path('messages/', views.messages, name='messages'),
+    path('messagesPage/', views.messagesPage, name='messagesPage'),
     path('albums/', views.album_list, name='album_list'),
     path('albums/create/', views.album_create, name='album_create'),
     path('albums/<int:pk>/update/', views.album_update, name='album_update'),
@@ -21,6 +23,10 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('photo/<int:photo_id>/delete/', photo_delete, name='photo_delete'),
     path('photo/<int:photo_id>/edit/', photo_update, name='photo_update'),
+    path('friends/', views.friends, name='friends'),
+    path('send-request/<int:user_id>/', views.send_friend_request, name='send_request'),
+    path('accept-request/<int:request_id>/', views.accept_friend_request, name='accept_request'),
+    path('create-post/', views.create_post, name='create_post'),
 
 
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
